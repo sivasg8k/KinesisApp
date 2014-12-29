@@ -67,7 +67,11 @@ public class KinesisConsumer {
 				  
 				  for(Record record : records) {
 					  String recordData = new String(record.getData().array());
+					  recordData = recordData.replace("review/summary", "");
+					  recordData = recordData.replace("review/text", "");
 					  System.out.println("record seq " + record.getSequenceNumber() + " :record data " + recordData);
+					  recordData = BigDataUtil.getInstance().removeStopWords(recordData);
+					  System.out.println("record seq " + record.getSequenceNumber() + " :record data without stop words" + recordData);
 				  }
 				  if(!records.isEmpty()) {
 					  startingSequenceNumber = records.get(records.size()-1).getSequenceNumber();
