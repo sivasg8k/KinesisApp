@@ -72,15 +72,17 @@ public class KinesisConsumer {
 					  System.out.println("record seq " + record.getSequenceNumber() + " :record data " + recordData);
 					  recordData = BigDataUtil.getInstance().removeStopWords(recordData);
 					  System.out.println("record seq " + record.getSequenceNumber() + " :record data without stop words" + recordData);
+					  RedisClient.getInstance().updateWordCountToRedis(recordData);
+					  System.out.println("updated word count for record seq " + record.getSequenceNumber());
 				  }
 				  if(!records.isEmpty()) {
 					  startingSequenceNumber = records.get(records.size()-1).getSequenceNumber();
 				  }
 				  try {    
 					    Thread.sleep(1000);
-					  } catch (InterruptedException exception) { 
-						  throw new RuntimeException(exception);
-				      }
+				  } catch (InterruptedException exception) { 
+					  throw new RuntimeException(exception);
+				  }
 				     // shardIterator = result.getNextShardIterator();
 				 }
 		}
