@@ -6,7 +6,7 @@ import redis.clients.jedis.Jedis;
 
 public class RedisClient {
 	
-	private static final String endpoint = "moviereviews.sqjbuo.0001.use1.cache.amazonaws.com";
+	private static final String endpoint = "moviereviewsdb.sqjbuo.0001.use1.cache.amazonaws.com";
 	
 	private Jedis jedis;
 	
