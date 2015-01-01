@@ -33,7 +33,7 @@ public class KinesisConsumer {
 		DescribeStreamRequest dsr = new DescribeStreamRequest();
 		dsr.setStreamName(streamName);
 		List<Shard> shards = null;
-		String startingSequenceNumber = "49546348174621634574882490030821379688905806070966910978";
+		String startingSequenceNumber = "49546581094665657647181772337264117070949807600814784514";
 		
 		
 		while(true) {
