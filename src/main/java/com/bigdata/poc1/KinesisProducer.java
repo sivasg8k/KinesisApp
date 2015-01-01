@@ -49,6 +49,7 @@ public class KinesisProducer {
 			    PutRecordResult putRecordResult = kinesisClient.putRecord(putRecordRequest);  
 			    sequenceNumberOfPreviousRecord = putRecordResult.getSequenceNumber(); 
 			    System.out.println("record number " + lineNumber  + " inserted into kinesis");
+			    System.out.println("sequence Number is ---->" + sequenceNumberOfPreviousRecord);
 			    lineNumber++;
 		    }
 		    
