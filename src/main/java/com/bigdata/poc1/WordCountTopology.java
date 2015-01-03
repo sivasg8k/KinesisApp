@@ -60,7 +60,7 @@ public class WordCountTopology {
 	 */
 	private static final long serialVersionUID = 1L;
 	Map<String, Integer> counts = new HashMap<String, Integer>();
-    BufferedWriter writer;
+    private transient BufferedWriter writer;
     
     public WordCount() {
     	  File file = new File("word_count.txt");
