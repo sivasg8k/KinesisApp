@@ -45,11 +45,7 @@ public class WordCountTopology {
     @Override
 	public void execute(Tuple tuple, BasicOutputCollector collector) {
     	
-		String sentence = tuple.getString(0);
-		StringTokenizer st = new StringTokenizer(sentence," ");
-		while(st.hasMoreTokens()) {
-			collector.emit(new Values(st.nextToken()));
-		}
+		
 		
 	}
   }
@@ -75,19 +71,25 @@ public class WordCountTopology {
 
     @Override
     public void execute(Tuple tuple, BasicOutputCollector collector) {
-      String word = tuple.getString(0);
-      Integer count = counts.get(word);
-      if (count == null)
-        count = 0;
-      count++;
-      counts.put(word, count);
-      collector.emit(new Values(word, count));
+      String sentence = tuple.getString(0);
       
       try
       {
-	      writer.write("word---->" + word + " count------>" + count);
-	      writer.newLine();
-      
+         	StringTokenizer st = new StringTokenizer(sentence," ");
+			while(st.hasMoreTokens()) {
+				String word = st.nextToken();
+					
+				Integer count = counts.get(word);
+			      if (count == null)
+			        count = 0;
+			      count++;
+			      counts.put(word, count);
+			      collector.emit(new Values(word, count));
+			      writer.write("word---->" + word + " count------>" + count);
+				  writer.newLine();
+			      
+			}
+		
       } catch(Exception e) {
     	  e.printStackTrace();
       } finally {
@@ -97,7 +99,6 @@ public class WordCountTopology {
 			e.printStackTrace();
 		}
       }
-      
     }
 
     @Override
@@ -113,7 +114,7 @@ public class WordCountTopology {
     builder.setSpout("spout", new RandomSentenceSpout(), 5);
 
     builder.setBolt("split", new SplitSentence(), 8).shuffleGrouping("spout");
-    builder.setBolt("count", new WordCount(), 12).fieldsGrouping("split", new Fields("word"));
+    //builder.setBolt("count", new WordCount(), 12).fieldsGrouping("split", new Fields("word"));
 
     Config conf = new Config();
     conf.setDebug(true);
