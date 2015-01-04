@@ -89,12 +89,6 @@ public class WordCountTopology {
 			  writer.newLine();*/
 	  } catch(Exception e) {
     	  e.printStackTrace();
-      } finally {
-    	  try {
-			writer.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
       }
     }
 
