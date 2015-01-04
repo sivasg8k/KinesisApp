@@ -44,9 +44,12 @@ public class WordCountTopology {
 
     @Override
 	public void execute(Tuple tuple, BasicOutputCollector collector) {
-    	
-		
-		
+    	String sentence = tuple.getString(0);
+    	StringTokenizer st = new StringTokenizer(sentence," ");
+		while(st.hasMoreTokens()) {
+			String word = st.nextToken();
+			collector.emit(new Values(word));
+		}
 	}
   }
 
@@ -71,27 +74,20 @@ public class WordCountTopology {
 
     @Override
     public void execute(Tuple tuple, BasicOutputCollector collector) {
-      String sentence = tuple.getString(0);
+      String word = tuple.getString(0);
       
       try
       {
-         	StringTokenizer st = new StringTokenizer(sentence," ");
-			while(st.hasMoreTokens()) {
-				String word = st.nextToken();
-					
-				Integer count = counts.get(word);
-			      if (count == null)
-			        count = 0;
-			      count++;
-			      counts.put(word, count);
-			      collector.emit(new Values(word, count));
-			      System.out.println("word---->" + word + " count---->" + count);
-			      /*writer.write("word---->" + word + " count------>" + count);
-				  writer.newLine();*/
-			      
-			}
-		
-      } catch(Exception e) {
+	 		Integer count = counts.get(word);
+		      if (count == null)
+		        count = 0;
+		      count++;
+		      counts.put(word, count);
+		      collector.emit(new Values(word, count));
+		      System.out.println("word---->" + word + " count---->" + count);
+		      /*writer.write("word---->" + word + " count------>" + count);
+			  writer.newLine();*/
+	  } catch(Exception e) {
     	  e.printStackTrace();
       } finally {
     	  try {
@@ -112,10 +108,10 @@ public class WordCountTopology {
 
     TopologyBuilder builder = new TopologyBuilder();
 
-    builder.setSpout("spout", new RandomSentenceSpout(), 5);
+    builder.setSpout("spout", new RandomSentenceSpout(), 2);
 
-    builder.setBolt("split", new SplitSentence(), 8).shuffleGrouping("spout");
-    builder.setBolt("count", new WordCount(), 2).fieldsGrouping("split", new Fields("word"));
+    builder.setBolt("split", new SplitSentence(), 3).shuffleGrouping("spout");
+    builder.setBolt("count", new WordCount(), 5).fieldsGrouping("split", new Fields("word"));
 
     Config conf = new Config();
     conf.setDebug(true);
