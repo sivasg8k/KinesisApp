@@ -1,0 +1,52 @@
+Steps-POC
+1. publish temperature data into topic in MQTT server
+Challenges faced: if publisher publishes too fast, subscriber doesn't get all messages due to delay in uploading data to kinesis.
+Hence, introduced delay in publishing data.
+2. subscribe to that topic and listen for messages
+3. implement callback and push data into kinesis
+4. start ec2 instance to run EMR commands
+5. run command to start EMR cluster
+./elastic-mapreduce --create --alive --name SysTempAnalyticsCluster --ami-version 3.0.4  --instance-type m1.xlarge --hive-interactive --hive-versions latest --pig-interactive --num-instances 3 --ssh --key-pair siva-POC
+1 Master, 2 Core nodes - m1.xlarge
+6. create hive table
+
+DROP TABLE systems_temp;
+create table systems_temp(timestamp TIMESTAMP, target_temp BIGINT, actual_temp BIGINT, system INT, system_age INT, buildingID BIGINT)
+row format delimited fields terminated by ',' STORED BY 'com.amazon.emr.kinesis.hive.KinesisStorageHandler' TBLPROPERTIES("kinesis.stream.name"="SysTempStream");
+
+DROP TABLE building_meta;
+create table building_meta(building_id INT, building_mgr STRING, building_age INT, hvac_prod STRING, country STRING)
+row format delimited fields terminated by ',' STORED AS TEXTFILE;
+LOAD DATA LOCAL INPATH '/home/hadoop/hive/building.csv' into table building_meta;
+
+7. select count(*) from systems_temp; - 8095 records - 350 secs
+
+8. create derived table from systems_temp; - 347 secs
+
+CREATE TABLE hvac_temperatures as
+select 
+		*, 
+		target_temp - actual_temp as temp_diff, 
+		IF((target_temp - actual_temp) > 5, 'COLD', 
+                     IF((target_temp - actual_temp) < -5, 'HOT', 
+                        		'NORMAL')) AS temprange,
+        IF((target_temp - actual_temp) > 5, '1', 
+                     IF((target_temp - actual_temp) < -5, '1', 
+                        		0)) AS extremetemp
+from systems_temp;
+
+9. create join table for building meta and temperature data - 1 mapper - 37 secs
+
+create table if not exists hvac_building as select h.*, b.country, b.hvac_prod, b.building_age, b.building_mgr from building_meta b join hvac_temperatures h on b.building_id = h.buildingID;
+
+10. Countries where system temperatures reach extreme levels
+select country, count(extremetemp) as tempcount from hvac_building where extremetemp = '1' group by country order by tempcount DESC; - 2 mappers, 2 reducers - 51 secs
+
+11. Countries where system temperatures become HOT
+select country, count(temprange) as tempcount from hvac_building where temprange='HOT' group by country order by tempcount DESC; - 2 mappers, 2 reducers - 51 secs
+
+12. Countries where system temperatures become COLD
+select country, count(temprange) as tempcount from hvac_building where temprange='COLD' group by country order by tempcount DESC; - 2 mappers, 2 reducers - 49 secs
+
+13. Product configurations of those systems whose temperatures reached extreme levels - 2 mappers, 2 reducers - 51 secs
+select hvac_prod, count(extremetemp) as tempcount from hvac_building where extremetemp='1' group by hvac_prod order by tempcount DESC;

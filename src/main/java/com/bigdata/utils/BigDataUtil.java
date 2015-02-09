@@ -4,9 +4,13 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Random;
 import java.util.StringTokenizer;
 
 import com.amazonaws.auth.AWSCredentials;
@@ -85,6 +89,47 @@ public class BigDataUtil {
 		return output.toString();
 	}
 	
+	private static final Random random = new Random();
+
+
+    public static String getMacAddress() {
+        String result = "";
+
+        try {
+            for (NetworkInterface ni : Collections.list(
+                    NetworkInterface.getNetworkInterfaces())) {
+                byte[] hardwareAddress = ni.getHardwareAddress();
+
+                if (hardwareAddress != null) {
+                    for (int i = 0; i < hardwareAddress.length; i++)
+                        result += String.format((i == 0 ? "" : "-") + "%02X", hardwareAddress[i]);
+
+                    return result;
+                }
+            }
+
+        } catch (SocketException e) {
+            System.out.println("Could not find out MAC Adress. Exiting Application ");
+            System.exit(1);
+        }
+        return result;
+    }
+
+    public static int createRandomNumberBetween(int min, int max) {
+
+        return random.nextInt(max - min + 1) + min;
+    }
+    
+    public String convertDateToHiveFormat(String inDate, String inTime) {
+    	
+    	String[] inDateSpl = inDate.split("/");
+    	String outDate = "20" + inDateSpl[2] + "-" + (inDateSpl[0].length() == 1 ? "0" + inDateSpl[0] : inDateSpl[0]) + "-" + (inDateSpl[1].length() == 1 ? "0" + inDateSpl[1] : inDateSpl[1]);
+    	
+    	String[] inTimeSpl = inTime.split(":");
+    	String outTime = (inTimeSpl[0].length() == 1 ? "0" + inTimeSpl[0] : inTimeSpl[0]) + ":" + (inTimeSpl[1].length() == 1 ? "0" + inTimeSpl[1] : inTimeSpl[1]) + ":" + (inTimeSpl[2].length() == 1 ? "0" + inTimeSpl[2] : inTimeSpl[2]);
+    	
+    	return (outDate + " " + outTime);
+    }
 	
 
 }

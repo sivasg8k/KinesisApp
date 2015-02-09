@@ -1,12 +1,8 @@
-package com.bigdata.poc1;
+package com.bigdata.poc2;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.List;
-import java.util.Properties;
 
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.auth.EnvironmentVariableCredentialsProvider;
 import com.amazonaws.services.kinesis.AmazonKinesis;
 import com.amazonaws.services.kinesis.AmazonKinesisClient;
 import com.amazonaws.services.kinesis.model.DescribeStreamRequest;
@@ -17,40 +13,40 @@ import com.amazonaws.services.kinesis.model.GetShardIteratorRequest;
 import com.amazonaws.services.kinesis.model.GetShardIteratorResult;
 import com.amazonaws.services.kinesis.model.Record;
 import com.amazonaws.services.kinesis.model.Shard;
-import com.bigdata.utils.BigDataUtil;
+import com.amazonaws.services.kinesis.model.ShardIteratorType;
 
-public class KinesisConsumer {
+public class SystemsTempConsumer {
 
-	public static void main(String[] args) throws IOException {
+	public static void main(String[] args) {
 		
+		String streamName = "SysTempStream";
 		
-		String streamName = "TwitterStreamingApp";
-		
-		AmazonKinesis kinesisClient = new AmazonKinesisClient(BigDataUtil.getInstance().getCreds());
+		AmazonKinesis kinesisClient = new AmazonKinesisClient(new EnvironmentVariableCredentialsProvider());
 		
 		List<Record> records = null;
 		
 		DescribeStreamRequest dsr = new DescribeStreamRequest();
 		dsr.setStreamName(streamName);
 		List<Shard> shards = null;
-		String startingSequenceNumber = "49546942849504405901067590873796838315359316659111198722";
+		String startingSequenceNumber = "49547752755836920748238186178896741036426297854077698050";
 		
 		
-		while(true) {
+		
 			
 				DescribeStreamResult dsRes = kinesisClient.describeStream(dsr);
+				
 				shards = dsRes.getStreamDescription().getShards();
+				int recCount = 0;
+				
 		
 				for (Shard shard : shards) {
 				  //Create new GetRecordsRequest with existing shardIterator.   //Set maximum records to return to 1000.
 					
 					String shardIterator = null;
-					
-					
 					GetShardIteratorRequest getShardIteratorRequest = new GetShardIteratorRequest();
 					getShardIteratorRequest.setStreamName(streamName);
 					getShardIteratorRequest.setShardId(shard.getShardId()); 
-					getShardIteratorRequest.setShardIteratorType("AFTER_SEQUENCE_NUMBER");
+					getShardIteratorRequest.setShardIteratorType(ShardIteratorType.AT_SEQUENCE_NUMBER);
 					getShardIteratorRequest.setStartingSequenceNumber(startingSequenceNumber);
 					
 					GetShardIteratorResult getShardIteratorResult = kinesisClient.getShardIterator(getShardIteratorRequest);
@@ -67,17 +63,12 @@ public class KinesisConsumer {
 				  
 				  for(Record record : records) {
 					  String recordData = new String(record.getData().array());
-					  recordData = recordData.replace("review/summary", "");
-					  recordData = recordData.replace("review/text", "");
 					  System.out.println("record seq " + record.getSequenceNumber() + " :record data " + recordData);
-					  recordData = BigDataUtil.getInstance().removeStopWords(recordData);
-					  System.out.println("record seq " + record.getSequenceNumber() + " :record data without stop words" + recordData);
-					 // RedisClient.getInstance().updateWordCountToRedis(recordData);
-					  System.out.println("updated word count for record seq " + record.getSequenceNumber());
+					  recCount++;
 				  }
-				  if(!records.isEmpty()) {
-					  startingSequenceNumber = records.get(records.size()-1).getSequenceNumber();
-				  }
+				 
+				  System.out.println("The total records in stream " + recCount);
+				  
 				  try {    
 					    Thread.sleep(1000);
 				  } catch (InterruptedException exception) { 
@@ -85,7 +76,8 @@ public class KinesisConsumer {
 				  }
 				     // shardIterator = result.getNextShardIterator();
 				 }
-		}
+		
+
 	}
 
 }

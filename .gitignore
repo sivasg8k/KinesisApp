@@ -1,2 +1,8 @@
 /target
 /src/main/resources/awsCredentials.properties
+.classpath
+.project
+.settings/
+.metadata/
+-pub-tcplocalhost1883/
+-sub-tcplocalhost1883/
