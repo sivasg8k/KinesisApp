@@ -50,3 +50,33 @@ select country, count(temprange) as tempcount from hvac_building where temprange
 
 13. Product configurations of those systems whose temperatures reached extreme levels - 2 mappers, 2 reducers - 51 secs
 select hvac_prod, count(extremetemp) as tempcount from hvac_building where extremetemp='1' group by hvac_prod order by tempcount DESC;
+
+14. export hvac_building table data to local
+insert overwrite local directory '/home/hadoop/hive/export' row format delimited fields terminated by ',' select * from hvac_building;
+
+15. try logistic regression using R to predict extremetemp
+building_temp = read.csv("hvac_building.csv")
+install.packages("caTools")
+library(caTools)
+set.seed(1000)
+split = sample.split(building_temp$extreme_temp, SplitRatio = 0.70)
+train = subset(building_temp, split==TRUE)
+test = subset(building_temp, split==FALSE)
+temp_pred_model = glm(extreme_temp ~ system + system_age + country + hvac_prod, data = train, family=binomial)
+predictTest = predict(temp_pred_model, type="response", newdata=test)
+table(test$extreme_temp, predictTest > 0.52)
+Predicted accuracy - 58%
+
+16. Do the same logistic regression using mahout on EMR master
+Please do not run logistic regression on EMR using mahout because this algo cannot be run on HDFS. it can only run on single machine and so need to run locally
+export MAHOUT_LOCAL=TRUE
+train the algorithm with training data and generate model
+ bin/mahout trainlogistic --passes 1 --rate 1 --lambda 0.5 --input /home/hadoop/mahout/train_temp.csv --features 14 --output /home/hadoop/mahout/tempmodel --target extreme_temp --categories 2 --predictors system system_age country hvac_prod --types numeric numeric word word
+ test the model with the test data
+ bin/mahout runlogistic --input /home/hadoop/mahout/test_temp.csv  --model /home/hadoop/mahout/tempmodel --auc --scores --confusion
+ AUC - 0.49
+ confusion: [[0.0, 0.0], [1014.0, 1384.0]]
+entropy: [[-0.8, -0.8], [-0.6, -0.6]]
+accuracy - 58%
+
+ 
